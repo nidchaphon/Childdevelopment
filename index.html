@@ -1,57 +1,43 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body>
 
-<head>
-  <meta charset="UTF-8">
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+    <h3 style="text-align:center;">กำลังเปิดแบบฟอร์ม...</h3>
 
-<body>
+    <script>
+      const MY_LIFF_ID = "2008558752-e2xnMg5G";
+      const FORM_BASE = "https://docs.google.com/forms/d/e/1aQv4xVYzDl-rAwI1v9LvIijlwfQUsMLNgVr5h_uKDx4/viewform?usp=pp_url&entry.1644087500=";
 
-  <h3 style="text-align:center;">กำลังเปิดแบบฟอร์ม...</h3>
+      async function main() {
+        await liff.init({ liffId: MY_LIFF_ID });
 
-  <script>
-    const MY_LIFF_ID = "2008558752-e2xnMg5G";
-  const FORM_BASE = "https://docs.google.com/forms/d/e/1aQv4xVYzDl-rAwI1v9LvIijlwfQUsMLNgVr5h_uKDx4/viewform?usp=pp_url&entry.1644087500=";
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
 
-  async function main() {
-    alert("Before init");
-    await liff.init({ liffId: MY_LIFF_ID });
-    alert("After init");
+        const profile = await liff.getProfile();
+        const uid = encodeURIComponent(profile.userId);
 
-    if (!liff.isLoggedIn()) {
-      alert("Not logged in -> login()");
-      liff.login();
-      return;
-    }
+        const formUrl = FORM_BASE + uid;
 
-    alert("Logged in");
+        liff.openWindow({
+          url: formUrl,
+          external: true
+        });
 
-    const profile = await liff.getProfile();
-    alert("UserID = " + profile.userId);
+        setTimeout(() => {
+          if (liff.isInClient()) liff.closeWindow();
+        }, 1000);
+      }
 
-    const uid = encodeURIComponent(profile.userId);
-    const formUrl = FORM_BASE + uid;
+      main();
+    </script>
 
-    alert("Redirecting to: " + formUrl);
-
-    liff.openWindow({
-      url: formUrl,
-      external: true
-    });
-
-    if (liff.isInClient()) {
-      setTimeout(() => liff.closeWindow(), 1000);
-    }
-  }
-
-  alert("Page loaded");
-  alert("typeof liff = " + typeof liff);
-
-  main();
-  </script>
-
-</body>
-
+  </body>
 </html>
