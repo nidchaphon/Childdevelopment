@@ -3,37 +3,87 @@
   <head>
     <meta charset="UTF-8">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body>
-
-    <h3 style="text-align:center;">กำลังเปิดแบบฟอร์ม...</h3>
 
     <script>
       const MY_LIFF_ID = "2008558752-e2xnMg5G";
       const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSfSCXa9aXIlMn5w9nRgnIKy_c_nN45NC6cpUEDyB5LnvxyE0g/viewform?usp=pp_url&entry.1644087500=";
 
       async function main() {
-        await liff.init({ liffId: MY_LIFF_ID });
 
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
-
-        const profile = await liff.getProfile();
-        const uid = encodeURIComponent(profile.userId);
-
-        const formUrl = FORM_BASE + uid;
-
-        liff.openWindow({
-          url: formUrl,
-          external: false   // ⭐ แก้ตรงนี้เท่านั้น!
+        // 🟣 แสดง SweetAlert2 Loading ตอนเริ่ม
+        Swal.fire({
+          title: 'กำลังเปิดแบบฟอร์ม...',
+          html: 'กรุณารอสักครู่',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
         });
 
-        setTimeout(() => {
-          if (liff.isInClient()) liff.closeWindow();
-        }, 1000);
+        try {
+          await liff.init({ liffId: MY_LIFF_ID });
+
+          if (!liff.isLoggedIn()) {
+            Swal.close();
+            liff.login();
+            return;
+          }
+
+          let profile;
+
+          try {
+            profile = await liff.getProfile();
+          } catch (err) {
+            console.error("⚠️ getProfile ERROR:", err);
+
+            Swal.fire({
+              title: 'ต้องการอนุญาตสิทธิ์ก่อนใช้งาน',
+              html: `
+                ระบบต้องการสิทธิ์เข้าถึงข้อมูลโปรไฟล์ LINE ของคุณ<br>
+                <b>กรุณากด "ตกลง" เพื่อเข้าสู่ระบบอีกครั้ง</b>
+              `,
+              icon: 'warning',
+              confirmButtonText: 'ตกลง',
+              allowOutsideClick: false,
+              allowEscapeKey: false
+            }).then(() => {
+              liff.logout();
+              setTimeout(() => liff.login(), 500);
+            });
+
+            return;
+          }
+
+          const uid = encodeURIComponent(profile.userId);
+          const formUrl = FORM_BASE + uid;
+
+          // ปิด Loading ก่อนเปิดฟอร์ม
+          Swal.close();
+
+          liff.openWindow({
+            url: formUrl,
+            external: false
+          });
+
+          setTimeout(() => {
+            if (liff.isInClient()) liff.closeWindow();
+          }, 1000);
+
+        } catch (error) {
+          console.error("❌ LIFF INIT ERROR:", error);
+
+          Swal.fire({
+            title: 'เกิดข้อผิดพลาด',
+            text: 'ไม่สามารถโหลดระบบ LIFF ได้ กรุณาลองใหม่',
+            icon: 'error',
+            confirmButtonText: 'ตกลง'
+          });
+        }
       }
 
       main();
